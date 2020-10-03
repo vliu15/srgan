@@ -1,0 +1,62 @@
+n_sr: &n_sr 2
+hr_size: &hr_size [28, 28]
+lr_size: &lr_size [7, 7]
+
+data_dir: &data_dir data
+
+train_dataset:
+    _target_: modules.dataset.Dataset
+    root: *data_dir
+    train: true
+    download: true
+    hr_size: *hr_size
+    lr_size: *lr_size
+    n_sr: *n_sr
+
+train_dataloader:
+    batch_size: 16
+    drop_last: true
+    shuffle: true
+    pin_memory: true
+
+val_dataset:
+    _target_: modules.dataset.Dataset
+    root: *data_dir
+    train: true
+    download: true
+    hr_size: *hr_size
+    lr_size: *lr_size
+    n_sr: *n_sr
+
+val_dataloader:
+    batch_size: 64
+    drop_last: false
+    shuffle: false
+    pin_memory: true
+
+generator:
+    _target_: modules.networks.Generator
+    base_channels: 64
+    n_ps_blocks: *n_sr
+    n_res_blocks: 16
+
+discriminator:
+    _target_: modules.networks.Discriminator
+    base_channels: 64
+
+optim:
+    lr: 0.0001
+
+train_srresnet:
+    steps: 1000000
+    save_every: 10000
+    log_dir: logs
+
+train_srgan:
+    steps: 200000
+    decay_after: 100000
+    save_every: 2000
+    log_dir: logs
+
+resume_checkpoint: null
+pretrain_checkpoint: null
