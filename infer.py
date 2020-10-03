@@ -21,8 +21,8 @@
 # THE SOFTWARE.
 
 import argparse
-import yaml
 
+import yaml
 import torch
 from omegaconf import OmegaConf
 from hydra.utils import instantiate
