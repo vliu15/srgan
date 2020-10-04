@@ -64,7 +64,7 @@ def main():
             'Specify a checkpoint to load in config.resume_checkpoint or config.pretrain_checkpoint'
         )
 
-    generator = instantiate(config.generator).to(device)
+    generator = instantiate(config.generator).to(device).eval()
     generator.load_state_dict(torch.load(checkpoint)['g_state_dict'])
 
     config.val_dataloader.batch_size = 1

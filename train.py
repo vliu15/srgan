@@ -53,7 +53,9 @@ def train_srresnet(dataloaders, srresnet, optimizer, train_config, device, start
         # training epoch
         epoch_steps = 0
         mean_loss = 0.0
-        pbar = tqdm(train_dataloader, position=0, desc='[loss: -.-----]')
+        generator.train()
+        discriminator.train()
+        pbar = tqdm(train_dataloader, position=0, desc='train [loss: -.-----]')
         for (hr, lr) in pbar:
             hr = hr.to(device)
             lr = lr.to(device)
@@ -69,7 +71,7 @@ def train_srresnet(dataloaders, srresnet, optimizer, train_config, device, start
             mean_loss += loss.item()
             cur_step += 1
             epoch_steps += 1
-            pbar.set_description(desc=f'[loss: {mean_loss/epoch_steps:.5f}]')
+            pbar.set_description(desc=f'train [loss: {mean_loss/epoch_steps:.5f}]')
 
             if cur_step % train_config.save_every == 0:
                 print(f'Step {cur_step}: saving checkpoint')
@@ -86,7 +88,9 @@ def train_srresnet(dataloaders, srresnet, optimizer, train_config, device, start
         # validation epoch
         epoch_steps = 0
         mean_loss = 0.0
-        pbar = tqdm(train_dataloader, position=0, desc='[loss: -.-----]')
+        generator.eval()
+        discriminator.eval()
+        pbar = tqdm(val_dataloader, position=0, desc='val [loss: -.-----]')
         for (hr, lr) in pbar:
             hr = hr.to(device)
             lr = lr.to(device)
@@ -98,7 +102,7 @@ def train_srresnet(dataloaders, srresnet, optimizer, train_config, device, start
 
             mean_loss += loss.item()
             epoch_steps += 1
-            pbar.set_description(desc=f'[loss: {mean_loss/epoch_steps:.5f}]')
+            pbar.set_description(desc=f'val [loss: {mean_loss/epoch_steps:.5f}]')
 
         # break from training loop
         if cur_step == train_config.steps:
@@ -125,7 +129,7 @@ def train_srgan(dataloaders, models, optimizers, schedulers, train_config, devic
         epoch_steps = 0
         mean_g_loss = 0.0
         mean_d_loss = 0.0
-        pbar = tqdm(train_dataloader, position=0, desc='[G loss: -.-----][D loss: -.-----]')
+        pbar = tqdm(train_dataloader, position=0, desc='train [G loss: -.-----][D loss: -.-----]')
         for (hr, lr) in pbar:
             hr = hr.to(device)
             lr = lr.to(device)
@@ -145,7 +149,7 @@ def train_srgan(dataloaders, models, optimizers, schedulers, train_config, devic
             mean_d_loss += d_loss.item()
             cur_step += 1
             epoch_steps += 1
-            pbar.set_description(desc=f'[G loss: {mean_g_loss/epoch_steps:.5f}][D loss: {mean_d_loss/epoch_steps:.5f}]')
+            pbar.set_description(desc=f'train [G loss: {mean_g_loss/epoch_steps:.5f}][D loss: {mean_d_loss/epoch_steps:.5f}]')
 
             if cur_step % train_config.save_every == 0:
                 print(f'Step {cur_step}: saving checkpoint')
@@ -170,7 +174,7 @@ def train_srgan(dataloaders, models, optimizers, schedulers, train_config, devic
         epoch_steps = 0
         mean_g_loss = 0.0
         mean_d_loss = 0.0
-        pbar = tqdm(train_dataloader, position=0, desc='[G loss: -.-----][D loss: -.-----]')
+        pbar = tqdm(train_dataloader, position=0, desc='val [G loss: -.-----][D loss: -.-----]')
         for (hr, lr) in pbar:
             hr = hr.to(device)
             lr = lr.to(device)
@@ -182,7 +186,7 @@ def train_srgan(dataloaders, models, optimizers, schedulers, train_config, devic
             mean_g_loss += g_loss.item()
             mean_d_loss += d_loss.item()
             epoch_steps += 1
-            pbar.set_description(desc=f'[G loss: {mean_g_loss/epoch_steps:.5f}][D loss: {mean_d_loss/epoch_steps:.5f}]')
+            pbar.set_description(desc=f'val [G loss: {mean_g_loss/epoch_steps:.5f}][D loss: {mean_d_loss/epoch_steps:.5f}]')
 
         # break from training loop
         if cur_step == train_config.steps:
