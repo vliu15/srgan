@@ -1,13 +1,21 @@
 n_sr: &n_sr 2
-hr_size: &hr_size [28, 28]
-lr_size: &lr_size [7, 7]
-
 data_dir: &data_dir data
 
+## stl10 params ##
+target: &target modules.dataset.STL10
+hr_size: &hr_size [64, 64]
+lr_size: &lr_size [16, 16]
+
+## imagenet params ##
+# target: &target modules.dataset.ImageNet
+# crop_size: &crop_size [256, 256]
+# bottom_width: &bottom_width 8
+
 train_dataset:
-    _target_: modules.dataset.Dataset
+    _target_: *target
     root: *data_dir
-    train: true
+    # train: true
+    split: train
     download: true
     hr_size: *hr_size
     lr_size: *lr_size
@@ -20,9 +28,10 @@ train_dataloader:
     pin_memory: true
 
 val_dataset:
-    _target_: modules.dataset.Dataset
+    _target_: *target
     root: *data_dir
-    train: true
+    # train: false
+    split: test
     download: true
     hr_size: *hr_size
     lr_size: *lr_size

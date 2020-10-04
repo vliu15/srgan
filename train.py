@@ -30,7 +30,7 @@ from tqdm import tqdm
 from omegaconf import OmegaConf
 from hydra.utils import instantiate
 
-from modules.dataset import Dataset
+from modules.dataset import collate_fn
 from modules.loss import SRGANLoss
 
 
@@ -53,8 +53,7 @@ def train_srresnet(dataloaders, srresnet, optimizer, train_config, device, start
         # training epoch
         epoch_steps = 0
         mean_loss = 0.0
-        generator.train()
-        discriminator.train()
+        srresnet.train()
         pbar = tqdm(train_dataloader, position=0, desc='train [loss: -.-----]')
         for (hr, lr) in pbar:
             hr = hr.to(device)
@@ -88,8 +87,7 @@ def train_srresnet(dataloaders, srresnet, optimizer, train_config, device, start
         # validation epoch
         epoch_steps = 0
         mean_loss = 0.0
-        generator.eval()
-        discriminator.eval()
+        srresnet.eval()
         pbar = tqdm(val_dataloader, position=0, desc='val [loss: -.-----]')
         for (hr, lr) in pbar:
             hr = hr.to(device)
@@ -203,12 +201,12 @@ def main():
 
     train_dataloader = torch.utils.data.DataLoader(
         instantiate(config.train_dataset),
-        collate_fn=Dataset.collate_fn,
+        collate_fn=collate_fn,
         **config.train_dataloader,
     )
     val_dataloader = torch.utils.data.DataLoader(
         instantiate(config.val_dataset),
-        collate_fn=Dataset.collate_fn,
+        collate_fn=collate_fn,
         **config.val_dataloader,
     )
 

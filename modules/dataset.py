@@ -27,18 +27,59 @@ import torchvision
 import torchvision.transforms as transforms
 
 
-# use cifar as default (for speed and also since imagenet is no longer publicly available)
-USING_CIFAR = True
-if USING_CIFAR:
-    DatasetSubclass = torchvision.datasets.CIFAR10
-else:
-    DatasetSubclass = torchvision.datasets.ImageNet
+def collate_fn(batch):
+    hrs, lrs = [], []
+    for hr, lr in batch:
+        hrs.append(hr)
+        lrs.append(lr)
+
+    return torch.stack(hrs, dim=0), torch.stack(lrs, dim=0)
 
 
-class Dataset(DatasetSubclass):
+class STL10(torchvision.datasets.STL10):
     def __init__(self, *args, **kwargs):
-        hr_size = kwargs.pop('hr_size', [96, 96])
-        lr_size = kwargs.pop('lr_size', [24, 24])
+        hr_size = kwargs.pop('hr_size', [64, 64])
+        lr_size = kwargs.pop('lr_size', [16, 16])
+        sr_size = kwargs.pop('n_sr', 2) ** 2
+        super().__init__(*args, **kwargs)
+
+        if hr_size is not None and lr_size is not None:
+            assert hr_size[0] == sr_size * lr_size[0]
+            assert hr_size[1] == sr_size * lr_size[1]
+
+        # High-res images are cropped and scaled to [-1, 1]
+        self.hr_transforms = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.RandomCrop(hr_size),
+            transforms.RandomHorizontalFlip(),
+            transforms.Lambda(lambda img: np.array(img)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ])
+
+        # Low-res images are downsampled with bicubic kernel and scaled to [0, 1]
+        self.lr_transforms = transforms.Compose([
+            transforms.Normalize((-1.0, -1.0, -1.0), (2.0, 2.0, 2.0)),
+            transforms.ToPILImage(),
+            transforms.Resize(lr_size, interpolation=Image.BICUBIC),
+            transforms.ToTensor(),
+        ])
+
+    def __getitem__(self, idx):
+        image = torch.from_numpy(self.data[idx])
+
+        hr = self.hr_transforms(image)
+        lr = self.lr_transforms(hr)
+        return hr, lr
+
+    def __len__(self):
+        return len(self.data)
+
+
+class ImageNet(torchvision.datasets.ImageNet):
+    def __init__(self, *args, **kwargs):
+        hr_size = kwargs.pop('hr_size', [384, 384])
+        lr_size = kwargs.pop('lr_size', [96, 96])
         sr_size = kwargs.pop('n_sr', 2) ** 2
         super().__init__(*args, **kwargs)
 
@@ -63,28 +104,13 @@ class Dataset(DatasetSubclass):
             transforms.ToTensor(),
         ])
 
-        self.to_pil = transforms.ToPILImage()
-        self.to_tensor = transforms.ToTensor()
-
     def __getitem__(self, idx):
-        # uncomment the following lines for imagenet
-        # path, label = self.imgs[idx]
-        # image = Image.open(path).convert('RGB')
-
-        # uncomment the following lines for cifar
-        image = torch.from_numpy(self.data[idx]).permute(2, 0, 1)
-        image = self.to_pil(image)
+        path, _ = self.imgs[idx]
+        image = Image.open(path).convert('RGB')
 
         hr = self.hr_transforms(image)
         lr = self.lr_transforms(hr)
         return hr, lr
 
-    @staticmethod
-    def collate_fn(batch):
-        hrs, lrs = [], []
-
-        for hr, lr in batch:
-            hrs.append(hr)
-            lrs.append(lr)
-
-        return torch.stack(hrs, dim=0), torch.stack(lrs, dim=0)
+    def __len__(self):
+        return len(self.imgs)
