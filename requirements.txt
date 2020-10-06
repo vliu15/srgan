@@ -4,3 +4,4 @@ matplotlib
 hydra-core
 omegaconf
 pyyaml
+tqdm
